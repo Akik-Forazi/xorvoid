@@ -1,0 +1,59 @@
+{
+  "name": "@fraziym/xorvoid",
+  "version": "0.1.0-beta.1",
+  "description": "XorVoid — AI-powered error tracking that fixes errors before you see them. Local-first, agent-driven. Sentry's dark alter-ego.",
+  "type": "module",
+  "license": "MIT",
+  "author": "AKIK FARAJI <akikfaraji@gmail.com> (https://fraziym.com)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Akik-Forazi/xorvoid.git"
+  },
+  "homepage": "https://github.com/Akik-Forazi/xorvoid#readme",
+  "bugs": {
+    "url": "https://github.com/Akik-Forazi/xorvoid/issues"
+  },
+  "keywords": [
+    "error-tracking",
+    "ai",
+    "auto-fix",
+    "local-first",
+    "sentry-alternative",
+    "void",
+    "xorzen",
+    "fraziym",
+    "axoniz"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "xorvoid": "./dist/cli/index.js"
+  },
+  "main": "./dist/sdk/index.js",
+  "types": "./dist/sdk/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "start": "node dist/cli/index.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test --experimental-strip-types \"test/**/*.test.ts\"",
+    "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\""
+  },
+  "dependencies": {
+    "@fraziym/axoniz": ">=0.1.8-beta.1",
+    "@fraziym/axodex": ">=0.1.5-beta.1"
+  },
+  "peerDependencies": {
+    "@fraziym/axoniz": ">=0.1.8-beta.1",
+    "@fraziym/axodex": ">=0.1.5-beta.1"
+  },
+  "peerDependenciesMeta": {
+    "@fraziym/axoniz": { "optional": false },
+    "@fraziym/axodex": { "optional": false }
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "typescript": "^7.0.2"
+  }
+}
