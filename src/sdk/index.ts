@@ -15,7 +15,7 @@ import { EventEmitter } from "node:events";
 import { defaultDbPath } from "../home.ts";
 
 export interface XorvoidConfig {
-  /** Where to store errors. Default: ~/.fraziym/xorvoid/errors.db */
+  /** Where to store errors. Default: machine-local FRAZIYM cache (xorvoid/errors.db). */
   dsn?: string;
   /** Project name for grouping. */
   project?: string;
