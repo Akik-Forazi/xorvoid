@@ -13,13 +13,14 @@
  *   xorvoid version           Print version
  */
 
-import { ErrorServer } from "../server/index.js";
+import { ErrorServer } from "../server/index.ts";
+import { defaultDbPath, xorvoidHome } from "../home.ts";
+import fs from "node:fs";
 import path from "node:path";
-import os from "node:os";
 
 const args = process.argv.slice(2);
 const command = args[0] || "help";
-const dbPath = path.join(os.homedir(), ".xorvoid", "errors.db");
+const dbPath = defaultDbPath();
 
 function getServer(): ErrorServer {
   return new ErrorServer(dbPath);
@@ -72,8 +73,7 @@ ${DIM}Sentry tells you what broke. XorVoid fixes it.${RESET}
   },
 
   init: () => {
-    const fs = require("node:fs");
-    const xorvoidDir = path.join(os.homedir(), ".xorvoid");
+    const xorvoidDir = xorvoidHome();
     fs.mkdirSync(xorvoidDir, { recursive: true });
     console.log(`${BOLD}[xorvoid]${RESET} initialized`);
     console.log(`  Database: ${DIM}${dbPath}${RESET}`);
@@ -175,7 +175,7 @@ ${DIM}Sentry tells you what broke. XorVoid fixes it.${RESET}
 
   watch: () => {
     const server = getServer();
-    console.log(`${BOLD}[xorvoid]${RESET} watching for errors... ${DIM}(Ctrl+C to stop)${RESET}\n`);
+    console.log(`${BOLD}[xorvoid]${RESET} watching for new errors ${DIM}(live tail — history not replayed; Ctrl+C to stop)${RESET}\n`);
     const stop = server.watch((err) => {
       const sev = severityColor(err.level);
       console.log(`  ${sev}${new Date().toISOString().slice(11, 19)}${RESET}  ${BOLD}${err.error_name}${RESET}: ${err.error_message.slice(0, 80)}`);

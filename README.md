@@ -45,7 +45,7 @@ try {
 ```
 Error occurs in your app
     ↓
-@fraziym/xorvoid SDK captures it (local SQLite, no network)
+@fraziym/xorvoid SDK captures it (local SQLite via built-in node:sqlite, no network, zero runtime deps)
     ↓
 XorVoid agent wakes (powered by @fraziym/axoniz)
     ↓

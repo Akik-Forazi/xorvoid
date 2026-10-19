@@ -10,13 +10,12 @@
  *   try { risky() } catch (e) { captureException(e); }
  */
 
-import { ErrorServer } from "../server/index.js";
+import { ErrorServer } from "../server/index.ts";
 import { EventEmitter } from "node:events";
-import path from "node:path";
-import os from "node:os";
+import { defaultDbPath } from "../home.ts";
 
 export interface XorvoidConfig {
-  /** Where to store errors. Default: ~/.xorvoid/errors.db */
+  /** Where to store errors. Default: ~/.fraziym/xorvoid/errors.db */
   dsn?: string;
   /** Project name for grouping. */
   project?: string;
@@ -29,7 +28,7 @@ export interface XorvoidConfig {
 }
 
 const DEFAULT_CONFIG: XorvoidConfig = {
-  dsn: path.join(os.homedir(), ".xorvoid", "errors.db"),
+  dsn: defaultDbPath(),
   autoFix: true,
   environment: "production",
 };
@@ -83,7 +82,8 @@ export function captureException(
   });
 
   // Emit event for the watch command / agent
-  events.emit("error", { id, error, context });
+  // NOTE: named "captured", not "error" — EventEmitter throws on unhandled "error" events
+  events.emit("captured", { id, error, context });
 
   // If autoFix is enabled, signal the agent (in production this would
   // wake the AXONIZ agent; for now it just logs)
@@ -127,6 +127,6 @@ export function getConfig(): XorvoidConfig {
  * Subscribe to new error events.
  */
 export function onError(callback: (data: { id: string; error: unknown; context: unknown }) => void): () => void {
-  events.on("error", callback);
-  return () => events.off("error", callback);
+  events.on("captured", callback);
+  return () => events.off("captured", callback);
 }

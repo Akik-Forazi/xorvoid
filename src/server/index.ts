@@ -9,10 +9,11 @@
  * to find errors that need fixing.
  */
 
-import Database from "better-sqlite3";
+import { DatabaseSync } from "node:sqlite";
 import { createHash } from "node:crypto";
+import { defaultDbPath } from "../home.ts";
+import fs from "node:fs";
 import path from "node:path";
-import os from "node:os";
 
 export interface ErrorRecord {
   id: string;
@@ -48,22 +49,25 @@ export interface ErrorStats {
   errors: number;
   warnings: number;
   unique_fingerprints: number;
-  top_errors: { fingerprint: string; error_name: string; error_message: string; count: number; last_seen: number }[];
+  topErrors: { fingerprint: string; error_name: string; error_message: string; count: number; last_seen: number }[];
 }
 
 export class ErrorServer {
-  private db: Database.Database;
+  private db: DatabaseSync;
   private dbPath: string;
 
   constructor(dbPath?: string) {
-    this.dbPath = dbPath || path.join(os.homedir(), ".xorvoid", "errors.db");
-    this.db = new Database(this.dbPath);
+    this.dbPath = dbPath || defaultDbPath();
+    if (this.dbPath !== ":memory:") {
+      fs.mkdirSync(path.dirname(this.dbPath), { recursive: true });
+    }
+    this.db = new DatabaseSync(this.dbPath);
     this.init();
   }
 
   private init(): void {
-    this.db.pragma("journal_mode = WAL");
-    this.db.pragma("synchronous = NORMAL");
+    this.db.exec("PRAGMA journal_mode = WAL;");
+    this.db.exec("PRAGMA synchronous = NORMAL;");
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS errors (
         id TEXT PRIMARY KEY,
@@ -176,7 +180,7 @@ export class ErrorServer {
    * Get an error by ID.
    */
   get(errorId: string): ErrorRecord | null {
-    return (this.db.prepare("SELECT * FROM errors WHERE id = ?").get(errorId) as ErrorRecord) || null;
+    return (this.db.prepare("SELECT * FROM errors WHERE id = ?").get(errorId) as unknown as ErrorRecord) || null;
   }
 
   /**
@@ -185,7 +189,7 @@ export class ErrorServer {
   listUnresolved(limit = 50, offset = 0): ErrorRecord[] {
     return this.db.prepare(
       "SELECT * FROM errors WHERE resolved = 0 ORDER BY last_seen DESC LIMIT ? OFFSET ?"
-    ).all(limit, offset) as ErrorRecord[];
+    ).all(limit, offset) as unknown as ErrorRecord[];
   }
 
   /**
@@ -194,7 +198,7 @@ export class ErrorServer {
   listRecent(limit = 50): ErrorRecord[] {
     return this.db.prepare(
       "SELECT * FROM errors ORDER BY timestamp DESC LIMIT ?"
-    ).all(limit) as ErrorRecord[];
+    ).all(limit) as unknown as ErrorRecord[];
   }
 
   /**
@@ -219,16 +223,19 @@ export class ErrorServer {
   }
 
   /**
-   * Watch for new errors (polling-based, for the CLI `watch` command).
+   * Watch for NEW errors (polling-based, for the CLI `watch` command).
+   * Live tail: starts from the current end of the log — history is not replayed.
+   * Cursor is SQLite rowid (insertion order), not the id string.
    */
   watch(callback: (error: ErrorRecord) => void, intervalMs = 1000): () => void {
-    let lastId = "";
+    const row = this.db.prepare("SELECT COALESCE(MAX(rowid), 0) AS max_rowid FROM errors").get() as { max_rowid: number };
+    let lastRowid = Number(row.max_rowid);
     const timer = setInterval(() => {
       const newErrors = this.db.prepare(
-        "SELECT * FROM errors WHERE id > ? ORDER BY timestamp ASC"
-      ).all(lastId) as ErrorRecord[];
+        "SELECT *, rowid AS _rowid FROM errors WHERE rowid > ? ORDER BY rowid ASC"
+      ).all(lastRowid) as unknown as (ErrorRecord & { _rowid: number })[];
       for (const err of newErrors) {
-        lastId = err.id;
+        lastRowid = Number(err._rowid);
         callback(err);
       }
     }, intervalMs);
@@ -251,8 +258,8 @@ export class ErrorServer {
       .replace(/\d+/g, "<n>")                 // numbers
       .replace(/'[^']*'/g, "'...'")           // quoted strings
       .replace(/"[^"]*"/g, '"..."')           // double-quoted strings
+      .replace(/https?:\/\/[^\s]+/g, "<url>") // URLs (before paths)
       .replace(/\/[^\s]+/g, "/<path>")        // file paths
-      .replace(/https?:\/\/[^\s]+/g, "<url>") // URLs
 
     // Extract the top stack frame for grouping
     let topFrame = "";
