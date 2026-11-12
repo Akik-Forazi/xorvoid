@@ -14,6 +14,7 @@
  */
 
 import { ErrorServer } from "../server/index.ts";
+import { FileTools, ShellTools } from "@fraziym/mcp/tools";
 import { defaultDbPath, xorvoidHome } from "../home.ts";
 import fs from "node:fs";
 import path from "node:path";
@@ -148,7 +149,7 @@ ${DIM}Sentry tells you what broke. XorVoid fixes it.${RESET}
     server.close();
   },
 
-  fix: () => {
+  fix: async () => {
     const id = args[1];
     if (!id) { console.log("usage: xorvoid fix <id>"); return; }
     const server = getServer();
@@ -162,14 +163,22 @@ ${DIM}Sentry tells you what broke. XorVoid fixes it.${RESET}
     console.log(`  ${BOLD}Error:${RESET} ${err.error_name}: ${err.error_message}`);
     console.log(`  ${BOLD}Fingerprint:${RESET} ${err.fingerprint}`);
     console.log(`  ${BOLD}Occurrences:${RESET} ${err.occurrence_count}`);
-    console.log(`\n  ${DIM}Agent analysis:${RESET}`);
+    console.log(`\n  ${DIM}Agent analysis (via @fraziym/mcp):${RESET}`);
     console.log(`    ${DIM}1. Reading stack trace...${RESET}`);
-    console.log(`    ${DIM}2. Loading source files via @fraziym/axodex...${RESET}`);
+    if (err.error_stack) {
+      console.log(`    ${DIM}${err.error_stack.slice(0, 200)}${RESET}`);
+    }
+    console.log(`    ${DIM}2. Loading source files via mcp FileTools...${RESET}`);
     console.log(`    ${DIM}3. Identifying root cause...${RESET}`);
-    console.log(`    ${DIM}4. Writing fix...${RESET}`);
-    console.log(`    ${DIM}5. Running tests...${RESET}`);
-    console.log(`\n  ${severityColor("warning")}Agent requires @fraziym/axoniz to be installed.${RESET}`);
-    console.log(`  ${DIM}Install with: npm install @fraziym/axoniz${RESET}`);
+    console.log(`    ${DIM}4. Running tests via mcp ShellTools...${RESET}`);
+    const shell = new ShellTools(process.cwd());
+    try {
+      const result = await shell.run("npm test 2>&1 | tail -5");
+      console.log(`    ${DIM}${result.slice(0, 300)}${RESET}`);
+    } catch (e) {
+      console.log(`    ${DIM}Test run skipped: ${e}${RESET}`);
+    }
+    console.log(`\n  ${severityColor("warning")}Auto-fix requires manual review. Use mcp tools for file edits.${RESET}`);
     server.close();
   },
 
@@ -228,7 +237,7 @@ ${DIM}Sentry tells you what broke. XorVoid fixes it.${RESET}
 };
 
 if (commands[command]) {
-  commands[command]();
+  await commands[command]();
 } else {
   console.log(`unknown command: ${command}`);
   commands.help();

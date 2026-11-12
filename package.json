@@ -1,7 +1,7 @@
 {
   "name": "@fraziym/xorvoid",
   "version": "0.1.0-beta.1",
-  "description": "XorVoid — AI-powered error tracking that fixes errors before you see them. Local-first, agent-driven. Sentry's dark alter-ego.",
+  "description": "XorVoid \u2014 AI-powered error tracking that fixes errors before you see them. Local-first, agent-driven. Sentry's dark alter-ego.",
   "type": "module",
   "license": "MIT",
   "author": "AKIK FARAJI <akikfaraji@gmail.com> (https://fraziym.com)",
@@ -41,18 +41,13 @@
     "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\""
   },
   "dependencies": {
-    "@fraziym/axoniz": ">=0.1.8-beta.1",
-    "@fraziym/axodex": ">=0.1.5-beta.1"
+    "@fraziym/mcp": "file:../mcp"
   },
   "peerDependencies": {
-    "@fraziym/axoniz": ">=0.1.8-beta.1",
-    "@fraziym/axodex": ">=0.1.5-beta.1"
+    "@fraziym/mcp": ">=0.1.1-beta.0"
   },
   "peerDependenciesMeta": {
-    "@fraziym/axoniz": {
-      "optional": false
-    },
-    "@fraziym/axodex": {
+    "@fraziym/mcp": {
       "optional": false
     }
   },

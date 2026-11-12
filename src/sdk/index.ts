@@ -13,6 +13,7 @@
 import { ErrorServer } from "../server/index.ts";
 import { EventEmitter } from "node:events";
 import { defaultDbPath } from "../home.ts";
+import { resolveWithin } from "@fraziym/mcp";
 
 export interface XorvoidConfig {
   /** Where to store errors. Default: machine-local FRAZIYM cache (xorvoid/errors.db). */
@@ -34,6 +35,14 @@ const DEFAULT_CONFIG: XorvoidConfig = {
 };
 
 let config: XorvoidConfig = { ...DEFAULT_CONFIG };
+
+/**
+ * Workspace guard — ensures file operations stay within the project boundary.
+ * Reuses mcp/core/guard.ts resolveWithin logic.
+ */
+export function guardPath(root: string, target: string): string {
+  return resolveWithin(root, target);
+}
 let server: ErrorServer | null = null;
 const events = new EventEmitter();
 
@@ -91,7 +100,7 @@ export function captureException(
     const record = server.get(id);
     if (record && record.occurrence_count === 1) {
       console.log(`[xorvoid] new error captured: ${id} — ${record.error_name}: ${record.error_message}`);
-      console.log(`[xorvoid] agent would analyze + fix this error (requires @fraziym/axoniz)`);
+      console.log(`[xorvoid] agent would analyze + fix this error (via @fraziym/mcp tools)`);
     }
   }
 
